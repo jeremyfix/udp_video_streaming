@@ -1,5 +1,9 @@
 # Video streaming through UDP sockets
 
+This repository provides a simple python implementation of video streaming through UDP sockets with JPEG compression.
+
+# How to use it ?
+
 In order to test it, identify the interface on which the socket must be opened, say eth0, then run the server :
 
 - python server.py eth0
