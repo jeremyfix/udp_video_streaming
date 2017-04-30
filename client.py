@@ -25,8 +25,12 @@ while(True):
     
     sent = sock.sendto("get", server_address)
 
-    data, server = sock.recvfrom(30000)
-
+    data, server = sock.recvfrom(65507)
+    print("Fragment size : {}".format(len(data)))
+    if len(data) == 4:
+        # This is a message error sent back by the server
+        if(data == "FAIL"):
+            continue
     array = np.frombuffer(data, dtype=np.dtype('uint8'))
     img = cv2.imdecode(array, 1)
     cv2.imshow("Image", img)

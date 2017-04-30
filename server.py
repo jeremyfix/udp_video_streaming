@@ -104,6 +104,10 @@ while(running):
                 buffer = grabber.get_buffer()
                 if buffer is None:
                         continue
+                if len(buffer) > 65507:
+                        print("The message is too large to be sent within a single UDP datagram. We do not handle splitting the message in multiple datagrams")
+                        sock.sendto("FAIL",address)
+                        continue
                 # We sent back the buffer to the client
                 sock.sendto(buffer.tobytes(), address)
         elif(data == "quit"):
