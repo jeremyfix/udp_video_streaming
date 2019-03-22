@@ -86,6 +86,7 @@ class VideoGrabber(Thread):
 
 grabber = VideoGrabber(jpeg_quality)
 grabber.start()
+get_message = lambda: grabber.get_buffer()
 
 running = True
 
@@ -102,7 +103,7 @@ while(running):
         data, address = sock.recvfrom(4)
         data = data.decode('utf-8')
         if(data == "get"):
-                buffer = grabber.get_buffer()
+                buffer = get_message()
                 if buffer is None:
                         continue
                 if len(buffer) > 65507:

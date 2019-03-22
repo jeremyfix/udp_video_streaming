@@ -34,7 +34,8 @@ while(True):
     img = cv2.imdecode(array, 1)
     cv2.imshow("Image", img)
     if cv2.waitKey(1) & 0xFF == ord('q'):
+        print("Asking the server to quit")
+        sock.sendto("quit".encode('utf-8'), server_address)
+        print("Quitting")
         break
 
-print("The client is quitting. If you wish to quite the server, simply call : \n")
-print("echo -n \"quit\" > /dev/udp/{}/{}".format(host, port))
