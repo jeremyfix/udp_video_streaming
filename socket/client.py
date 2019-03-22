@@ -22,8 +22,7 @@ port = int(sys.argv[2])
 server_address = (host, port)
 
 while(True):
-    
-    sent = sock.sendto("get", server_address)
+    sent = sock.sendto("get".encode('utf-8'), server_address)
 
     data, server = sock.recvfrom(65507)
     print("Fragment size : {}".format(len(data)))
