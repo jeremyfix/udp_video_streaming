@@ -1,5 +1,4 @@
 import socketserver
-import cv2
 import sys
 
 import video_grabber
