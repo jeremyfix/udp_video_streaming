@@ -30,12 +30,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
     def handle(self):
         print("Connection established")
         while True:
-            cmd = self.request.recv(5)
-            try:
-                cmd = cmd.decode('ascii')
-            except:
-                print(cmd)
-                raise
+            cmd = self.request.recv(5).decode('ascii')
             if cmd == 'image':
                 # Read the number of bytes to be read
                 buffer_size = int(self.request.recv(10).decode('ascii'))
