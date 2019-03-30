@@ -3,7 +3,8 @@ import sys
 
 import argparse
 
-# How to properly respond to "quit" ? and shutdown the server
+import cv2
+import numpy as np
 
 def get_ip(interface_name):
         """Helper to get the IP adress of the running server
@@ -13,67 +14,71 @@ def get_ip(interface_name):
         return ip
 
 
-import numpy as np
-import cv2
+def decode_image_buffer(img_buffer):
+    #img_array = np.frombuffer(img_buffer, dtype=np.dtype('uint8'))
+    img_array = np.array(list(img_buffer), dtype=np.dtype('uint8'))
+    # Decode a colored image
+    return cv2.imdecode(img_array, 1)
 
-cv2.namedWindow('Server')
-def save_image(buf):
-    array = np.frombuffer(buf, dtype=np.dtype('uint8'))
-    img = cv2.imdecode(array, 1)
-    cv2.imshow("Server", img)
-    cv2.waitKey(1)
-
+def encode_image(cv2_img):
+    global encode_params
+    result, buf = cv2.imencode('.jpg', cv2_img, encode_params)
+    return buf.tobytes()
 
 class MyTCPHandler(socketserver.BaseRequestHandler):
 
     def handle(self):
+        print("Connection established")
         while True:
-            print("Reading the command)")
-            cmd = self.request.recv(5).decode('utf-8')
-            print("Commande : " + cmd)
-            cmd = self.request.recv(5).decode('utf-8')
-            print("Commande : " + cmd)
-            self.request.sendall('toto'.encode('utf-8'))
+            cmd = self.request.recv(5)
+            try:
+                cmd = cmd.decode('ascii')
+            except:
+                print(cmd)
+                raise
+            if cmd == 'image':
+                # Read the number of bytes to be read
+                buffer_size = int(self.request.recv(10).decode('ascii'))
+                # Read the image buffer
+                img_bytes = self.request.recv(buffer_size)
 
-class MyTCPHandler2(socketserver.StreamRequestHandler):
+                cmd = self.request.recv(5).decode('ascii')
+                if cmd != 'done!':
+                    raise RuntimeError('Unexpected client info. Expected "done!", go "{}"'.format(cmd))
 
-    def handle(self):
-        # self.rfile is a file-like object created by the handler;
-        # we can now use e.g. readline() instead of raw recv() calls
-        while True:
-            print("Reading the command")
-            command = self.rfile.readline().strip().decode('utf-8')
-            if(command == 'quit'):
-                print("Asked to quit")
-                #?? self.server.request_shutdown()
-                return
-            elif(command == 'image'):
-                print("image")
-                img_buffer = self.rfile.readline()
 
-                print(img_buffer.decode('utf-8'))
-                self.wfile.write('yoop'.encode('utf-8'))
-                #print("Show the image")
-                #save_image(img_buffer)
+                # For fun, we play with the image
+                # and make its negative
+                cv2_img = decode_image_buffer(img_bytes)
+                cv2_img = 255 - cv2_img
+                img_bytes = encode_image(cv2_img)
 
-                #print('Sending back the image')
-                #self.wfile.write(img_buffer + "\n".encode('utf-8'))
+                # Build up the reply encoding the image
+                msg = bytes('image{:010}'.format(len(img_bytes)), "ascii")
+                self.request.sendall(msg)
+                self.request.sendall(img_bytes)
+                self.request.sendall('done!'.encode('ascii'))
 
+            else:
+                self.request.sendall('fail!'.encode('ascii'))
+                break
+        print("Connection closed")
 
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--port', type=int, help='The port to contact the server', required=True)
 parser.add_argument('--interface', type=str, help='The interface on which to listen', required=True)
-
+parser.add_argument('--jpeg_quality', type=int, help='The JPEG quality for compressing the reply', default=50)
 args = parser.parse_args()
 
 host = get_ip(args.interface)
 port = args.port
+
+encode_params = [int(cv2.IMWRITE_JPEG_QUALITY), args.jpeg_quality]
 
 with socketserver.TCPServer((host, port), MyTCPHandler) as server:
     print("Server listening on {}:{}".format(host, port))
     server_running = True
     while server_running:
         server.handle_request()
-    #?? server.shutdown()
 
