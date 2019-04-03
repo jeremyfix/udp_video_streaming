@@ -1,7 +1,8 @@
 import argparse
 import socket
+import sys
 
-from time import sleep
+import time
 
 import cv2
 import numpy as np
@@ -28,6 +29,9 @@ keep_running = True
 # encoded as a JPEG compressed byte sequence
 get_buffer = lambda: utils.encode_image(cv2.imread("monarch.png",cv2.IMREAD_UNCHANGED), jpeg_quality)
 
+idx = 0
+t0  = time.time()
+
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
     sock.connect((host, port))
     while keep_running:
@@ -38,20 +42,19 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
             continue
 
         # Prepare the message with the number of bytes going to be sent
-        msg = bytes("image{:010}".format(len(img_buffer)), "ascii")
+        msg = bytes("image{:07}".format(len(img_buffer)), "ascii")
         sock.sendall(msg)
 
         # Send the buffer
         sock.sendall(img_buffer)
-        # And a known handshake to ensure the sockets are in sync
-        sock.sendall('done!'.encode('ascii'))
 
         # Read the reply command
         cmd = sock.recv(5).decode('ascii')
         if cmd != 'image':
             raise RuntimeError("Unexpected server reply")
+
         # Read the image buffer size
-        img_size = int(sock.recv(10).decode('ascii'))
+        img_size = int(sock.recv(7).decode('ascii'))
 
         # Read the image buffer
         img_reply_bytes = sock.recv(img_size)
@@ -65,6 +68,17 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         img = utils.decode_image_buffer(img_reply_bytes)
         cv2.imshow("Image", img)
         keep_running = not(cv2.waitKey(1) & 0xFF == ord('q'))
+        if not keep_running:
+            sock.sendall('quit!'.encode('ascii'))
+
+        idx += 1
+        if idx == 10:
+            t1 = time.time()
+            sys.stdout.write("\r {:.3} images/second     ".format(10/(t1-t0)))
+            sys.stdout.flush()
+            t0 = t1
+            idx = 0
+
     print("Closing the socket")
 
 
