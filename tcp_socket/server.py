@@ -49,8 +49,10 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
 
                 # Decode the image
                 img = utils.decode_image_buffer(img_buffer)
+
                 # Process it
                 res = image_process(img)
+
                 # Encode the image
                 res_buffer = utils.encode_image(res, jpeg_quality)
 
