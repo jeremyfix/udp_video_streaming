@@ -4,7 +4,12 @@ from threading import Thread, Lock
 import time
 import sys
 
-from turbojpeg import TurboJPEG
+try:
+    from turbojpeg import TurboJPEG
+except:
+    pass
+
+import utils
 
 class VideoGrabber(Thread):
     """A threaded video grabber.
@@ -15,7 +20,7 @@ class VideoGrabber(Thread):
     attr2 (:obj:`int`, optional): Description of `attr2`.
 
     """
-    def __init__(self, jpeg_quality):
+    def __init__(self, jpeg_quality, jpeg_lib):
         """Constructor.
 
         Args:
@@ -28,7 +33,14 @@ class VideoGrabber(Thread):
         self.running = True
         self.buffer = None
         self.lock = Lock()
-        self.jpeg_quality = jpeg_quality
+
+        if jpeg_lib == 'turbo':
+            self.jpeg                   = TurboJPEG()
+            self.jpeg_encode_func = lambda img, jpeg_quality=jpeg_quality, jpeg=self.jpeg: utils.turbo_encode_image(img, jpeg, jpeg_quality)
+
+        else:
+            self.jpeg_encode_func = lambda img, jpeg_quality=jpeg_quality: utils.cv2_encode_image(img, jpeg_quality)
+
 
     def stop(self):
         self.running = False
@@ -55,7 +67,7 @@ class VideoGrabber(Thread):
             # Protected by a lock
             # As the main thread may asks to access the buffer
             self.lock.acquire()
-            self.buffer = self.turbojpeg.encode(img, quality=self.jpeg_quality)
+            self.buffer = self.jpeg_encode_func(img)
             self.lock.release()
 
 
@@ -63,7 +75,7 @@ if __name__ == '__main__':
 
     jpeg_quality = 100
 
-    grabber = VideoGrabber(jpeg_quality)
+    grabber = VideoGrabber(jpeg_quality, jpeg_lib='turbo')
     grabber.start()
     time.sleep(1)
 

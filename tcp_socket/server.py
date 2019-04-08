@@ -5,7 +5,10 @@ import socket
 import cv2
 import numpy as np
 
-from turbojpeg import TurboJPEG
+try:
+    from turbojpeg import TurboJPEG
+except:
+	pass
 
 import utils
 
@@ -18,13 +21,22 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument('--port', type=int, help='The port on which to listen for incoming connections', required=True)
 parser.add_argument('--jpeg_quality', type=int, help='The JPEG quality for compressing the reply', default=50)
+parser.add_argument('--encoder', type=str, choices=['cv2','turbo'], help='Which library to use to encode/decode in JPEG the images', default='cv2')
 args = parser.parse_args()
 
 host         = '' # any interface
 port         = args.port
 jpeg_quality = args.jpeg_quality
 
-jpeg = TurboJPEG()
+if args.encoder == 'turbo':
+	from turbojpeg import TurboJPEG
+
+	jpeg                   = TurboJPEG()
+	jpeg_encode_func = lambda img, jpeg_quality=jpeg_quality: utils.turbo_encode_image(img, jpeg, jpeg_quality)
+	jpeg_decode_func = lambda buf: utils.turbo_decode_image_buffer(buf, jpeg)
+else:
+	jpeg_encode_func = lambda img, jpeg_quality=jpeg_quality: utils.cv2_encode_image(img, jpeg_quality)
+	jpeg_decode_func = lambda buf: utils.cv2_decode_image_buffer(buf)
 
 # A temporary buffer in which the received data will be copied
 # this prevents creating a new buffer all the time
@@ -53,13 +65,13 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 utils.recv_data_into(conn, img_view[:img_size], img_size)
 
                 # Decode the image
-                img = utils.decode_image_buffer(img_view[:img_size], jpeg)
+                img = jpeg_decode_func(img_view[:img_size])
 
                 # Process it
                 res = image_process(img)
 
                 # Encode the image
-                res_buffer = utils.encode_image(res, jpeg, jpeg_quality)
+                res_buffer = jpeg_encode_func(res)
 
                 # Make the reply
                 reply = bytes("image{:07}".format(len(res_buffer)), "ascii")

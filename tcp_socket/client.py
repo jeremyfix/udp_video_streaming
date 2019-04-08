@@ -7,7 +7,6 @@ import time
 import cv2
 import numpy as np
 
-from turbojpeg import TurboJPEG
 import video_grabber
 import utils
 
@@ -16,6 +15,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--host', type=str, help='The IP of the echo server', required=True)
 parser.add_argument('--port', type=int, help='The port on which the server is listening', required=True)
 parser.add_argument('--jpeg_quality', type=int, help='The JPEG quality for compressing the reply', default=50)
+parser.add_argument('--encoder', type=str, choices=['cv2','turbo'], help='Which library to use to encode/decode in JPEG the images', default='cv2')
 
 args = parser.parse_args()
 
@@ -27,11 +27,19 @@ cv2.namedWindow("Image")
 
 keep_running = True
 
-jpeg = TurboJPEG()
+if args.encoder == 'turbo':
+    from turbojpeg import TurboJPEG
+
+    jpeg                   = TurboJPEG()
+    jpeg_encode_func = lambda img, jpeg_quality=jpeg_quality: utils.turbo_encode_image(img, jpeg, jpeg_quality)
+    jpeg_decode_func = lambda buf: utils.turbo_decode_image_buffer(buf, jpeg)
+else:
+    jpeg_encode_func = lambda img, jpeg_quality=jpeg_quality: utils.cv2_encode_image(img, jpeg_quality)
+    jpeg_decode_func = lambda buf: utils.cv2_decode_image_buffer(buf)
 
 # A lambda function to get a cv2 image
 # encoded as a JPEG compressed byte sequence
-grabber = video_grabber.VideoGrabber(jpeg_quality)
+grabber = video_grabber.VideoGrabber(jpeg_quality, args.encoder)
 grabber.start()
 
 get_buffer = lambda: grabber.get_buffer()
@@ -86,7 +94,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
             raise RuntimeError("Unexpected server reply. Expected 'enod!', got '{}'".format(cmd))
 
         # Transaction is done, we now process/display the received image
-        img = utils.decode_image_buffer(img_view[:img_size], jpeg)
+        img = jpeg_decode_func(img_view[:img_size])
         cv2.imshow("Image", img)
         keep_running = not(cv2.waitKey(1) & 0xFF == ord('q'))
         if not keep_running:
@@ -101,5 +109,6 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
             idx = 0
     print()
     print("Closing the socket")
-
+    print("Stopping the grabber")
+    grabber.stop()
 
