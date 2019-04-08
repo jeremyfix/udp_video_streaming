@@ -5,11 +5,6 @@ import socket
 import cv2
 import numpy as np
 
-try:
-    from turbojpeg import TurboJPEG
-except:
-	pass
-
 import utils
 
 def image_process(cv2_img):
@@ -29,14 +24,14 @@ port         = args.port
 jpeg_quality = args.jpeg_quality
 
 if args.encoder == 'turbo':
-	from turbojpeg import TurboJPEG
+    from turbojpeg import TurboJPEG
 
-	jpeg                   = TurboJPEG()
-	jpeg_encode_func = lambda img, jpeg_quality=jpeg_quality: utils.turbo_encode_image(img, jpeg, jpeg_quality)
-	jpeg_decode_func = lambda buf: utils.turbo_decode_image_buffer(buf, jpeg)
+    jpeg                   = TurboJPEG()
+    jpeg_encode_func = lambda img, jpeg_quality=jpeg_quality: utils.turbo_encode_image(img, jpeg, jpeg_quality)
+    jpeg_decode_func = lambda buf: utils.turbo_decode_image_buffer(buf, jpeg)
 else:
-	jpeg_encode_func = lambda img, jpeg_quality=jpeg_quality: utils.cv2_encode_image(img, jpeg_quality)
-	jpeg_decode_func = lambda buf: utils.cv2_decode_image_buffer(buf)
+    jpeg_encode_func = lambda img, jpeg_quality=jpeg_quality: utils.cv2_encode_image(img, jpeg_quality)
+    jpeg_decode_func = lambda buf: utils.cv2_decode_image_buffer(buf)
 
 # A temporary buffer in which the received data will be copied
 # this prevents creating a new buffer all the time
