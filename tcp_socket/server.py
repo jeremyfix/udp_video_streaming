@@ -18,9 +18,19 @@ parser.add_argument('--port', type=int, help='The port on which to listen for in
 parser.add_argument('--jpeg_quality', type=int, help='The JPEG quality for compressing the reply', default=50)
 args = parser.parse_args()
 
-host         = '' # any interface
+host         = 'localhost' # any interface
 port         = args.port
 jpeg_quality = args.jpeg_quality
+
+
+# A temporary buffer in which the received data will be copied
+# this prevents creating a new buffer all the time
+tmp_buf = bytearray(7)
+tmp_view = memoryview(tmp_buf) # this allows to get a reference to a slice of tmp_buf
+
+# Creates a temporary buffer which can hold the largest image we can transmit
+img_buf = bytearray(9999999)
+img_view = memoryview(img_buf)
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     s.bind((host, port))
@@ -29,18 +39,20 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     with conn:
         print('Connected by', addr)
         while True:
-            cmd = utils.recv_data(conn, 5).decode('ascii')
+            utils.recv_data_into(conn, tmp_view[:5], 5)
+            cmd = tmp_buf[:5].decode('ascii')
             if(cmd == 'image'):
                 # Read the image buffer size
-                img_size = int(utils.recv_data(conn, 7).decode('ascii'))
+                utils.recv_data_into(conn, tmp_view, 7)
+                img_size = int(tmp_buf.decode('ascii'))
 
                 # Read the buffer content
-                img_buffer = utils.recv_data(conn, img_size)
+                utils.recv_data_into(conn, img_view[:img_size], img_size)
 
                 # Decode the image
-                img = utils.decode_image_buffer(img_buffer)
+                img = utils.decode_image_buffer(img_view[:img_size])
 
-               # Process it
+                # Process it
                 res = image_process(img)
 
                 # Encode the image

@@ -31,3 +31,10 @@ def recv_data(sock, torecv):
         msg += chunk
         torecv -= len(chunk)
     return msg
+
+def recv_data_into(sock, buf_view, torecv):
+    while torecv > 0:
+        numrecv = sock.recv_into(buf_view[-torecv:], torecv)
+        if numrecv == 0:
+            raise RuntimeError("Socket connection broken")
+        torecv -= numrecv
