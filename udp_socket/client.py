@@ -6,26 +6,34 @@ import cv2
 import numpy as np
 import sys
 import time
+import argparse
 
-if(len(sys.argv) != 3):
-    print("Usage : {} hostname port".format(sys.argv[0]))
-    print("e.g.   {} 192.168.0.39 1080".format(sys.argv[0]))
-    sys.exit(-1)
+parser = argparse.ArgumentParser()
+parser.add_argument('--host', type=str, help='The IP at the server is listening', required=True)
+parser.add_argument('--port', type=int, help='The port on which the server is listening', required=True)
+parser.add_argument('--jpeg_quality', type=int, help='The JPEG quality for compressing the reply', default=50)
+parser.add_argument('--encoder', type=str, choices=['cv2','turbo'], help='Which library to use to encode/decode in JPEG the images', default='cv2')
+
+args = parser.parse_args()
 
 
-cv2.namedWindow("Image")
+
 
 # Create a UDP socket
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-host = sys.argv[1]
-port = int(sys.argv[2])
+host = args.host
+port = args.port
 server_address = (host, port)
+
+cv2.namedWindow("Image")
+
+t0 = time.time()
+frame_idx = 0
 
 while(True):
     sent = sock.sendto("get".encode('utf-8'), server_address)
 
     data, server = sock.recvfrom(65507)
-    print("Fragment size : {}".format(len(data)))
     if len(data) == 4:
         # This is a message error sent back by the server
         if(data == "FAIL"):
@@ -38,4 +46,11 @@ while(True):
         sock.sendto("quit".encode('utf-8'), server_address)
         print("Quitting")
         break
+    frame_idx += 1
 
+    if frame_idx == 30:
+        t1 = time.time()
+        sys.stdout.write('\r Framerate : {:.2f} frames/s.     '.format(30 / (t1 - t0)))
+        sys.stdout.flush()
+        t0 = t1
+        frame_idx = 0
