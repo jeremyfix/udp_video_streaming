@@ -5,6 +5,8 @@ import socket
 import cv2
 import numpy as np
 
+from turbojpeg import TurboJPEG
+
 import utils
 
 def image_process(cv2_img):
@@ -22,6 +24,7 @@ host         = 'localhost' # any interface
 port         = args.port
 jpeg_quality = args.jpeg_quality
 
+jpeg = TurboJPEG()
 
 # A temporary buffer in which the received data will be copied
 # this prevents creating a new buffer all the time
@@ -50,13 +53,13 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 utils.recv_data_into(conn, img_view[:img_size], img_size)
 
                 # Decode the image
-                img = utils.decode_image_buffer(img_view[:img_size])
+                img = utils.decode_image_buffer(img_view[:img_size], jpeg)
 
                 # Process it
                 res = image_process(img)
 
                 # Encode the image
-                res_buffer = utils.encode_image(res, jpeg_quality)
+                res_buffer = utils.encode_image(res, jpeg, jpeg_quality)
 
                 # Make the reply
                 reply = bytes("image{:07}".format(len(res_buffer)), "ascii")

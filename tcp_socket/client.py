@@ -7,6 +7,8 @@ import time
 import cv2
 import numpy as np
 
+from turbojpeg import TurboJPEG
+
 import utils
 
 parser = argparse.ArgumentParser()
@@ -25,9 +27,11 @@ cv2.namedWindow("Image")
 
 keep_running = True
 
+jpeg = TurboJPEG()
+
 # A lambda function to get a cv2 image
 # encoded as a JPEG compressed byte sequence
-get_buffer = lambda: utils.encode_image(cv2.imread("monarch.png",cv2.IMREAD_UNCHANGED), jpeg_quality)
+get_buffer = lambda: utils.encode_image(cv2.imread("monarch.png",cv2.IMREAD_UNCHANGED), jpeg, jpeg_quality)
 
 
 # A temporary buffer in which the received data will be copied
@@ -79,7 +83,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
             raise RuntimeError("Unexpected server reply. Expected 'enod!', got '{}'".format(cmd))
 
         # Transaction is done, we now process/display the received image
-        img = utils.decode_image_buffer(img_view[:img_size])
+        img = utils.decode_image_buffer(img_view[:img_size], jpeg)
         cv2.imshow("Image", img)
         keep_running = not(cv2.waitKey(1) & 0xFF == ord('q'))
         if not keep_running:
