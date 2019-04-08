@@ -22,15 +22,6 @@ host         = '' # any interface
 port         = args.port
 jpeg_quality = args.jpeg_quality
 
-cmd_buffer   = bytearray(5)
-image_buffer = bytearray()
-
-def read_cmd(bytebuf):
-    nbytes = conn.recv_into(cmd_buffer)
-    if nbytes != len(cmd_buffer):
-        raise RuntimeError('Did not get the right number of bytes, got {} , expected {}; bytearray is {}'.format(nbytes, len(bytebuf), bytes(bytebuf).decode('ascii')))
-
-
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     s.bind((host, port))
     s.listen(1)
@@ -38,19 +29,18 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     with conn:
         print('Connected by', addr)
         while True:
-            read_cmd(cmd_buffer)
-            cmd = cmd_buffer.decode('ascii')
+            cmd = utils.recv_data(conn, 5).decode('ascii')
             if(cmd == 'image'):
                 # Read the image buffer size
-                img_size = int(conn.recv(7).decode('ascii'))
+                img_size = int(utils.recv_data(conn, 7).decode('ascii'))
 
                 # Read the buffer content
-                img_buffer = conn.recv(img_size)
+                img_buffer = utils.recv_data(conn, img_size)
 
                 # Decode the image
                 img = utils.decode_image_buffer(img_buffer)
 
-                # Process it
+               # Process it
                 res = image_process(img)
 
                 # Encode the image
@@ -58,9 +48,9 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
 
                 # Make the reply
                 reply = bytes("image{:07}".format(len(res_buffer)), "ascii")
-                conn.sendall(reply)
-                conn.sendall(res_buffer)
-                conn.sendall(bytes('enod!', 'ascii'))
+                utils.send_data(conn, reply)
+                utils.send_data(conn, res_buffer)
+                utils.send_data(conn, bytes('enod!', 'ascii'))
             elif cmd == 'quit!':
                 break
             else:

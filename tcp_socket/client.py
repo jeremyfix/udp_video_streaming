@@ -43,24 +43,25 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
 
         # Prepare the message with the number of bytes going to be sent
         msg = bytes("image{:07}".format(len(img_buffer)), "ascii")
-        sock.sendall(msg)
+
+        utils.send_data(sock, msg)
 
         # Send the buffer
-        sock.sendall(img_buffer)
+        utils.send_data(sock, img_buffer)
 
         # Read the reply command
-        cmd = sock.recv(5).decode('ascii')
+        cmd = utils.recv_data(sock, 5).decode('ascii')
         if cmd != 'image':
             raise RuntimeError("Unexpected server reply")
 
         # Read the image buffer size
-        img_size = int(sock.recv(7).decode('ascii'))
+        img_size = int(utils.recv_data(sock, 7).decode('ascii'))
 
         # Read the image buffer
-        img_reply_bytes = sock.recv(img_size)
+        img_reply_bytes = utils.recv_data(sock, img_size)
 
         # Read the final handshake
-        cmd = sock.recv(5).decode('ascii')
+        cmd = utils.recv_data(sock, 5).decode('ascii')
         if cmd != 'enod!':
             raise RuntimeError("Unexpected server reply. Expected 'enod!', got '{}'".format(cmd))
 
