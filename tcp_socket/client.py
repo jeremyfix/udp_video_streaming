@@ -33,7 +33,6 @@ jpeg = TurboJPEG()
 # encoded as a JPEG compressed byte sequence
 get_buffer = lambda: utils.encode_image(cv2.imread("monarch.png",cv2.IMREAD_UNCHANGED), jpeg, jpeg_quality)
 
-
 # A temporary buffer in which the received data will be copied
 # this prevents creating a new buffer all the time
 tmp_buf = bytearray(7)
@@ -90,9 +89,9 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
             sock.sendall('quit!'.encode('ascii'))
 
         idx += 1
-        if idx == 10:
+        if idx == 30:
             t1 = time.time()
-            sys.stdout.write("\r {:.3} images/second ; msg size : {}    ".format(10/(t1-t0), img_size))
+            sys.stdout.write("\r {:.3} images/second ; msg size : {}    ".format(30/(t1-t0), img_size))
             sys.stdout.flush()
             t0 = t1
             idx = 0
