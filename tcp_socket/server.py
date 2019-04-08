@@ -20,7 +20,7 @@ parser.add_argument('--port', type=int, help='The port on which to listen for in
 parser.add_argument('--jpeg_quality', type=int, help='The JPEG quality for compressing the reply', default=50)
 args = parser.parse_args()
 
-host         = 'localhost' # any interface
+host         = '' # any interface
 port         = args.port
 jpeg_quality = args.jpeg_quality
 
