@@ -2,8 +2,8 @@ import cv2
 import numpy as np
 
 def decode_image_buffer(img_buffer):
-    #img_array = np.frombuffer(img_buffer, dtype=np.dtype('uint8'))
-    img_array = np.array(list(img_buffer), dtype=np.dtype('uint8'))
+    img_array = np.frombuffer(img_buffer, dtype=np.dtype('uint8'))
+    #img_array = np.array(list(img_buffer), dtype=np.dtype('uint8'))
     # Decode a colored image
     return  cv2.imdecode(img_array, flags=cv2.IMREAD_UNCHANGED)
 

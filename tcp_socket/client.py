@@ -79,7 +79,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
             sys.stdout.flush()
             t0 = t1
             idx = 0
-
+    print()
     print("Closing the socket")
 
 
