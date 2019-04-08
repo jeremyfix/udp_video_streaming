@@ -8,7 +8,7 @@ import cv2
 import numpy as np
 
 from turbojpeg import TurboJPEG
-
+import video_grabber
 import utils
 
 parser = argparse.ArgumentParser()
@@ -31,7 +31,11 @@ jpeg = TurboJPEG()
 
 # A lambda function to get a cv2 image
 # encoded as a JPEG compressed byte sequence
-get_buffer = lambda: utils.encode_image(cv2.imread("monarch.png",cv2.IMREAD_UNCHANGED), jpeg, jpeg_quality)
+grabber = video_grabber.VideoGrabber(jpeg_quality)
+grabber.start()
+
+get_buffer = lambda: grabber.get_buffer()
+#get_buffer = lambda: utils.encode_image(cv2.imread("monarch.png",cv2.IMREAD_UNCHANGED), jpeg, jpeg_quality)
 
 # A temporary buffer in which the received data will be copied
 # this prevents creating a new buffer all the time
