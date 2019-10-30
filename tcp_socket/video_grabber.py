@@ -20,16 +20,18 @@ class VideoGrabber(Thread):
     attr2 (:obj:`int`, optional): Description of `attr2`.
 
     """
-    def __init__(self, jpeg_quality, jpeg_lib):
+    def __init__(self, jpeg_quality, jpeg_lib, resize):
         """Constructor.
 
         Args:
         jpeg_quality (:obj:`int`): Quality of JPEG encoding, in 0, 100.
+        resize (:obj:`float'): resize factor in [0, 1]
 
         """
         Thread.__init__(self)
         self.cap = cv2.VideoCapture(0)
         self.turbojpeg = TurboJPEG()
+        self.resize_factor = resize
         self.running = True
         self.buffer = None
         self.lock = Lock()
@@ -60,6 +62,9 @@ class VideoGrabber(Thread):
     def run(self):
         while self.running:
             success, img = self.cap.read()
+            target_size = (int(img.shape[1] * self.resize_factor),
+                           int(img.shape[0] * self.resize_factor))
+            img = cv2.resize(img, target_size)
             if not success:
                 continue
 
