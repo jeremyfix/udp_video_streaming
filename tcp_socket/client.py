@@ -133,4 +133,3 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
     print("Closing the socket")
     print("Stopping the grabber")
     grabber.stop()
-
