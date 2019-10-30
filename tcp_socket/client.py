@@ -44,12 +44,16 @@ keep_running = True
 if args.encoder == 'turbo':
     from turbojpeg import TurboJPEG
 
-    jpeg                   = TurboJPEG()
-    jpeg_encode_func = lambda img, jpeg_quality=jpeg_quality: utils.turbo_encode_image(img, jpeg, jpeg_quality)
-    jpeg_decode_func = lambda buf: utils.turbo_decode_image_buffer(buf, jpeg)
+    jpeg = TurboJPEG()
+    jpeg_encode_func = functools.partial(utils.turbo_encode_image,
+                                         jpeg=jpeg,
+                                         jpeg_quality=jpeg_quality)
+    jpeg_decode_func = functools.partial(utils.turbo_decode_image_buffer,
+                                         jpeg=jpeg)
 else:
-    jpeg_encode_func = lambda img, jpeg_quality=jpeg_quality: utils.cv2_encode_image(img, jpeg_quality)
-    jpeg_decode_func = lambda buf: utils.cv2_decode_image_buffer(buf)
+    jpeg_encode_func = functools.partial(utils.cv2_encode_image,
+                                         jpeg_quality=jpeg_quality)
+    jpeg_decode_func = utils.cv2_decode_image_buffer
 
 # A lambda function to get a cv2 image
 # encoded as a JPEG compressed byte sequence
