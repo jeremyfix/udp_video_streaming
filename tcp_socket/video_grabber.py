@@ -2,7 +2,6 @@
 from threading import Thread, Lock
 import time
 import sys
-import functools
 # External modules
 import cv2
 # Local modules
@@ -41,15 +40,7 @@ class VideoGrabber(Thread):
         self.buffer = None
         self.lock = Lock()
 
-        if jpeg_lib == 'turbo':
-            self.jpeg = TurboJPEG()
-            self.jpeg_encode_func = functools.partial(utils.turbo_encode_image,
-                                                      jpeg=self.jpeg,
-                                                      jpeg_quality=jpeg_quality)  # noqa
-
-        else:
-            self.jpeg_encode_func = functools.partial(utils.cv2_encode_image,
-                                                      jpeg_quality=jpeg_quality)  # noqa 
+        self.jpeg_handler = utils.make_jpeg_handler(jpeg_lib, jpeg_quality)
 
     def stop(self):
         self.running = False
@@ -80,7 +71,7 @@ class VideoGrabber(Thread):
             # Protected by a lock
             # As the main thread may asks to access the buffer
             self.lock.acquire()
-            self.buffer = self.jpeg_encode_func(img)
+            self.buffer = self.jpeg_handler.compress(img)
             self.lock.release()
 
 

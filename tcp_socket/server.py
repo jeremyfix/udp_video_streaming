@@ -1,7 +1,6 @@
 # Standard modules
 import argparse
 import socket
-import functools
 # Local modules
 import utils
 
@@ -31,19 +30,7 @@ host = ''  # any interface
 port = args.port
 jpeg_quality = args.jpeg_quality
 
-if args.encoder == 'turbo':
-    from turbojpeg import TurboJPEG
-
-    jpeg = TurboJPEG()
-    jpeg_encode_func = functools.partial(utils.turbo_encode_image,
-                                         jpeg=jpeg,
-                                         jpeg_quality=jpeg_quality)
-    jpeg_decode_func = functools.partial(utils.turbo_decode_image_buffer,
-                                         jpeg=jpeg)
-else:
-    jpeg_encode_func = functools.partial(utils.cv2_encode_image,
-                                         jpeg_quality=jpeg_quality)
-    jpeg_decode_func = utils.cv2_decode_image_buffer
+jpeg_handler = utils.make_jpeg_handler(args.encoder, jpeg_quality)
 
 # A temporary buffer in which the received data will be copied
 # this prevents creating a new buffer all the time
@@ -73,13 +60,13 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 utils.recv_data_into(conn, img_view[:img_size], img_size)
 
                 # Decode the image
-                img = jpeg_decode_func(img_view[:img_size])
+                img = jpeg_handler.decompress(img_view[:img_size])
 
                 # Process it
                 res = image_process(img)
 
                 # Encode the image
-                res_buffer = jpeg_encode_func(res)
+                res_buffer = jpeg_handler.compress(res)
 
                 # Make the reply
                 reply = bytes("image{:07}".format(len(res_buffer)), "ascii")

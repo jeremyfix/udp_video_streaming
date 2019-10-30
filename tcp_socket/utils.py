@@ -1,26 +1,47 @@
 # External modules
 import cv2
 import numpy as np
+try:
+    from turbojpeg import TurboJPEG
+except ImportError:
+    print("Warning, failed to import turbojpeg")
 
 
-def cv2_decode_image_buffer(img_buffer):
-    img_array = np.frombuffer(img_buffer, dtype=np.dtype('uint8'))
-    # Decode a colored image
-    return cv2.imdecode(img_array, flags=cv2.IMREAD_UNCHANGED)
+class CV2JpegHandler:
+    """JPEG compression/decompression handled with CV2"""
+    def __init__(self, jpeg_quality):
+        self.encode_params = [int(cv2.IMWRITE_JPEG_QUALITY), jpeg_quality]
+
+    def compress(self, cv2_img):
+        _, buf = cv2.imencode('.jpg', cv2_img, self.encode_params)
+        return buf.tobytes()
+
+    def decompress(self, img_buffer):
+        img_array = np.frombuffer(img_buffer, dtype=np.dtype('uint8'))
+        # Decode a colored image
+        return cv2.imdecode(img_array, flags=cv2.IMREAD_UNCHANGED)
 
 
-def cv2_encode_image(cv2_img, jpeg_quality):
-    encode_params = [int(cv2.IMWRITE_JPEG_QUALITY), jpeg_quality]
-    result, buf = cv2.imencode('.jpg', cv2_img, encode_params)
-    return buf.tobytes()
+class TurboJpegHandler(object):
+    """The object handling JPEG compression/decompression"""
+    def __init__(self, jpeg_quality):
+        self.jpeg_quality = jpeg_quality
+        self.jpeg = TurboJPEG()
+
+    def compress(self, cv2_img):
+        return self.jpeg.encode(cv2_img, quality=self.jpeg_quality)
+
+    def decompress(self, img_buffer):
+        return self.jpeg.decode(img_buffer)
 
 
-def turbo_decode_image_buffer(img_buffer, jpeg):
-    return jpeg.decode(img_buffer)
-
-
-def turbo_encode_image(cv2_img, jpeg, jpeg_quality):
-    return jpeg.encode(cv2_img, quality=jpeg_quality)
+def make_jpeg_handler(name, jpeg_quality):
+    if name == 'cv2':
+        return CV2JpegHandler(jpeg_quality)
+    elif name == 'turbo':
+        return TurboJpegHandler(jpeg_quality)
+    else:
+        raise ValueError("Unknow Jpeg handler {}".format(name))
 
 
 def send_data(sock, msg):

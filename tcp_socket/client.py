@@ -5,7 +5,6 @@ import argparse
 import socket
 import sys
 import time
-import functools
 # External modules
 import cv2
 # Local modules
@@ -41,19 +40,7 @@ cv2.namedWindow("Image")
 
 keep_running = True
 
-if args.encoder == 'turbo':
-    from turbojpeg import TurboJPEG
-
-    jpeg = TurboJPEG()
-    jpeg_encode_func = functools.partial(utils.turbo_encode_image,
-                                         jpeg=jpeg,
-                                         jpeg_quality=jpeg_quality)
-    jpeg_decode_func = functools.partial(utils.turbo_decode_image_buffer,
-                                         jpeg=jpeg)
-else:
-    jpeg_encode_func = functools.partial(utils.cv2_encode_image,
-                                         jpeg_quality=jpeg_quality)
-    jpeg_decode_func = utils.cv2_decode_image_buffer
+jpeg_handler = utils.make_jpeg_handler(args.encoder, jpeg_quality)
 
 # A lambda function to get a cv2 image
 # encoded as a JPEG compressed byte sequence
@@ -115,7 +102,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                                ", got '{}'".format(cmd))
 
         # Transaction is done, we now process/display the received image
-        img = jpeg_decode_func(img_view[:img_size])
+        img = jpeg_handler.decompress(img_view[:img_size])
         cv2.imshow("Image", img)
         keep_running = not(cv2.waitKey(1) & 0xFF == ord('q'))
         if not keep_running:
