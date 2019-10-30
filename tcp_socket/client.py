@@ -14,11 +14,21 @@ import utils
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--host', type=str, help='The IP of the echo server', required=True)
-parser.add_argument('--port', type=int, help='The port on which the server is listening', required=True)
-parser.add_argument('--jpeg_quality', type=int, help='The JPEG quality for compressing the reply', default=50)
-parser.add_argument('--resize', type=float, help='Resize factor of the image', default=1.0)
-parser.add_argument('--encoder', type=str, choices=['cv2','turbo'], help='Which library to use to encode/decode in JPEG the images', default='cv2')
+parser.add_argument('--host', type=str,
+                    help='The IP of the echo server',
+                    required=True)
+parser.add_argument('--port', type=int,
+                    help='The port on which the server is listening',
+                    required=True)
+parser.add_argument('--jpeg_quality', type=int,
+                    help='The JPEG quality for compressing the reply',
+                    default=50)
+parser.add_argument('--resize', type=float,
+                    help='Resize factor of the image',
+                    default=1.0)
+parser.add_argument('--encoder', type=str, choices=['cv2', 'turbo'],
+                    help='Library to use to encode/decode in JPEG the images',
+                    default='cv2')
 
 args = parser.parse_args()
 
