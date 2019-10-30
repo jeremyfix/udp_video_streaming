@@ -5,6 +5,7 @@ import argparse
 import socket
 import sys
 import time
+import functools
 # External modules
 import cv2
 # Local modules
@@ -28,6 +29,9 @@ parser.add_argument('--resize', type=float,
 parser.add_argument('--encoder', type=str, choices=['cv2', 'turbo'],
                     help='Library to use to encode/decode in JPEG the images',
                     default='cv2')
+parser.add_argument('--image', type=str, 
+                   help='Image file to be processed',
+                   default=None)
 
 args = parser.parse_args()
 
@@ -42,12 +46,17 @@ keep_running = True
 
 jpeg_handler = utils.make_jpeg_handler(args.encoder, jpeg_quality)
 
-# A lambda function to get a cv2 image
-# encoded as a JPEG compressed byte sequence
-grabber = video_grabber.VideoGrabber(jpeg_quality, args.encoder, resize_factor)
-grabber.start()
+if args.image is not None:
+    grabber = None
+    img = cv2.imread(args.image, cv2.IMREAD_UNCHANGED)
+    get_buffer = functools.partial(jpeg_handler.compress, cv2_img=img)
+else:
+    grabber = video_grabber.VideoGrabber(jpeg_quality, 
+                                         args.encoder, 
+                                         resize_factor)
+    grabber.start()
+    get_buffer = grabber.get_buffer
 
-get_buffer = grabber.get_buffer
 # img = cv2.imread("monarch.png", cv2.IMREAD_UNCHANGED)
 # get_buffer = lambda: utils.encode_image(img, jpeg, jpeg_quality)
 
@@ -118,5 +127,6 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
             idx = 0
     print()
     print("Closing the socket")
-    print("Stopping the grabber")
-    grabber.stop()
+    if grabber is not None:
+        print("Stopping the grabber")
+        grabber.stop()
