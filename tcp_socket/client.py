@@ -1,12 +1,14 @@
+#!/usr/bin/env python3
+
+# Standard modules
 import argparse
 import socket
 import sys
-
 import time
-
+import functools
+# External modules
 import cv2
-import numpy as np
-
+# Local modules
 import video_grabber
 import utils
 
