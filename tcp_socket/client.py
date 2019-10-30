@@ -32,8 +32,8 @@ parser.add_argument('--encoder', type=str, choices=['cv2', 'turbo'],
 
 args = parser.parse_args()
 
-host         = args.host
-port         = args.port
+host = args.host
+port = args.port
 jpeg_quality = args.jpeg_quality
 resize_factor = args.resize
 
@@ -56,20 +56,22 @@ else:
 grabber = video_grabber.VideoGrabber(jpeg_quality, args.encoder, resize_factor)
 grabber.start()
 
-get_buffer = lambda: grabber.get_buffer()
-#get_buffer = lambda: utils.encode_image(cv2.imread("monarch.png",cv2.IMREAD_UNCHANGED), jpeg, jpeg_quality)
+get_buffer = grabber.get_buffer
+# img = cv2.imread("monarch.png", cv2.IMREAD_UNCHANGED)
+# get_buffer = lambda: utils.encode_image(img, jpeg, jpeg_quality)
 
 # A temporary buffer in which the received data will be copied
 # this prevents creating a new buffer all the time
 tmp_buf = bytearray(7)
-tmp_view = memoryview(tmp_buf) # this allows to get a reference to a slice of tmp_buf
+# this allows to get a reference to a slice of tmp_buf
+tmp_view = memoryview(tmp_buf)
 
 # Creates a temporary buffer which can hold the largest image we can transmit
 img_buf = bytearray(9999999)
 img_view = memoryview(img_buf)
 
 idx = 0
-t0  = time.time()
+t0 = time.time()
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
     sock.connect((host, port))
@@ -105,7 +107,8 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         # Read the final handshake
         cmd = utils.recv_data(sock, 5).decode('ascii')
         if cmd != 'enod!':
-            raise RuntimeError("Unexpected server reply. Expected 'enod!', got '{}'".format(cmd))
+            raise RuntimeError("Unexpected server reply. Expected 'enod!'"
+                               ", got '{}'".format(cmd))
 
         # Transaction is done, we now process/display the received image
         img = jpeg_decode_func(img_view[:img_size])
@@ -117,7 +120,8 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         idx += 1
         if idx == 30:
             t1 = time.time()
-            sys.stdout.write("\r {:.3} images/second ; msg size : {}    ".format(30/(t1-t0), img_size))
+            sys.stdout.write("\r {:.3} images/second ; msg size : {}    ".
+                             format(30/(t1-t0), img_size))
             sys.stdout.flush()
             t0 = t1
             idx = 0
