@@ -1,42 +1,55 @@
-import sys
+# Standard modules
 import argparse
 import socket
-
-import cv2
-import numpy as np
-
+import functools
+# Local modules
 import utils
+
 
 def image_process(cv2_img):
     # For fun, we play with the image
     cv2_img = 255 - cv2_img
     return cv2_img
 
+
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--port', type=int, help='The port on which to listen for incoming connections', required=True)
-parser.add_argument('--jpeg_quality', type=int, help='The JPEG quality for compressing the reply', default=50)
-parser.add_argument('--encoder', type=str, choices=['cv2','turbo'], help='Which library to use to encode/decode in JPEG the images', default='cv2')
+parser.add_argument('--port', type=int,
+                    help="The port on which to listen"
+                         " for incoming connections",
+                    required=True)
+parser.add_argument('--jpeg_quality', type=int,
+                    help='The JPEG quality for compressing the reply',
+                    default=50)
+parser.add_argument('--encoder', type=str, choices=['cv2', 'turbo'],
+                    help="Which library to use to encode/decode in JPEG "
+                         "the images",
+                    default='cv2')
 args = parser.parse_args()
 
-host         = '' # any interface
-port         = args.port
+host = ''  # any interface
+port = args.port
 jpeg_quality = args.jpeg_quality
 
 if args.encoder == 'turbo':
     from turbojpeg import TurboJPEG
 
-    jpeg                   = TurboJPEG()
-    jpeg_encode_func = lambda img, jpeg_quality=jpeg_quality: utils.turbo_encode_image(img, jpeg, jpeg_quality)
-    jpeg_decode_func = lambda buf: utils.turbo_decode_image_buffer(buf, jpeg)
+    jpeg = TurboJPEG()
+    jpeg_encode_func = functools.partial(utils.turbo_encode_image,
+                                         jpeg=jpeg,
+                                         jpeg_quality=jpeg_quality)
+    jpeg_decode_func = functools.partial(utils.turbo_decode_image_buffer,
+                                         jpeg=jpeg)
 else:
-    jpeg_encode_func = lambda img, jpeg_quality=jpeg_quality: utils.cv2_encode_image(img, jpeg_quality)
-    jpeg_decode_func = lambda buf: utils.cv2_decode_image_buffer(buf)
+    jpeg_encode_func = functools.partial(utils.cv2_encode_image,
+                                         jpeg_quality=jpeg_quality)
+    jpeg_decode_func = utils.cv2_decode_image_buffer
 
 # A temporary buffer in which the received data will be copied
 # this prevents creating a new buffer all the time
 tmp_buf = bytearray(7)
-tmp_view = memoryview(tmp_buf) # this allows to get a reference to a slice of tmp_buf
+# this allows to get a reference to a slice of tmp_buf
+tmp_view = memoryview(tmp_buf)
 
 # Creates a temporary buffer which can hold the largest image we can transmit
 img_buf = bytearray(9999999)
@@ -78,4 +91,3 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             else:
                 print("Got something else")
         print("Quitting")
-
