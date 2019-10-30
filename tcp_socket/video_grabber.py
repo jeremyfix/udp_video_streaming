@@ -1,15 +1,20 @@
-import cv2
-import numpy as np
+# Standard modules
 from threading import Thread, Lock
 import time
 import sys
+import functools
+# External modules
+import cv2
+# Local modules
+import utils
+
 
 try:
     from turbojpeg import TurboJPEG
-except:
-    pass
+except ImportError as error:
+    print("Warning, failed to import turbojpeg, "
+          "you will not be able to use it")
 
-import utils
 
 class VideoGrabber(Thread):
     """A threaded video grabber.
@@ -37,12 +42,14 @@ class VideoGrabber(Thread):
         self.lock = Lock()
 
         if jpeg_lib == 'turbo':
-            self.jpeg                   = TurboJPEG()
-            self.jpeg_encode_func = lambda img, jpeg_quality=jpeg_quality, jpeg=self.jpeg: utils.turbo_encode_image(img, jpeg, jpeg_quality)
+            self.jpeg = TurboJPEG()
+            self.jpeg_encode_func = functools.partial(utils.turbo_encode_image,
+                                                      jpeg=self.jpeg,
+                                                      jpeg_quality=self.jpeg_quality)  # noqa
 
         else:
-            self.jpeg_encode_func = lambda img, jpeg_quality=jpeg_quality: utils.cv2_encode_image(img, jpeg_quality)
-
+            self.jpeg_encode_func = functools.partial(utils.cv2_encode_image,
+                                                      jpeg_quality=self.jpeg_quality)  # noqa
 
     def stop(self):
         self.running = False
@@ -51,7 +58,8 @@ class VideoGrabber(Thread):
         """Method to access the encoded buffer.
 
             Returns:
-            np.ndarray: the compressed image if one has been acquired. None otherwise.
+            np.ndarray: the compressed image if one has been acquired.
+                        None otherwise.
         """
         if self.buffer is not None:
             self.lock.acquire()
@@ -112,4 +120,3 @@ if __name__ == '__main__':
     print()
     print("Quitting")
     grabber.stop()
-
