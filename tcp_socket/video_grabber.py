@@ -45,11 +45,11 @@ class VideoGrabber(Thread):
             self.jpeg = TurboJPEG()
             self.jpeg_encode_func = functools.partial(utils.turbo_encode_image,
                                                       jpeg=self.jpeg,
-                                                      jpeg_quality=self.jpeg_quality)  # noqa
+                                                      jpeg_quality=jpeg_quality)  # noqa
 
         else:
             self.jpeg_encode_func = functools.partial(utils.cv2_encode_image,
-                                                      jpeg_quality=self.jpeg_quality)  # noqa
+                                                      jpeg_quality=jpeg_quality)  # noqa 
 
     def stop(self):
         self.running = False
